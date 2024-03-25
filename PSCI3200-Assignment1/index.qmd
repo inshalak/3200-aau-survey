@@ -28,7 +28,7 @@ dat['q8_baseline'] = dat['q8_baseline'].str.replace(' Region', '')
 # Create a color palette for plotting
 palette = sns.color_palette("husl", len(dat['q8_baseline'].unique()))
 
-
+print(dat.head())
 ```
 
 
@@ -47,3 +47,81 @@ I have renamed the following variables
 | q17_2             | `belief_youth_change`               | Youth participation can bring positive change  |
 
 
+```{python}
+# defining a dictionary to map original column names to new descriptive names
+rename_dict = {
+    'q26_civ': 'plan_civil',
+    'q26_politics': 'plan_politics',
+    'q26_public': 'plan_public',
+    'q27_1': 'plan_run_office',
+    'q27_3': 'plan_start_ngo',
+    'q17_3': 'belief_change_participation',
+    'q17_1': 'belief_youth_opportunities',
+    'q17_2': 'belief_youth_change'
+}
+
+# adding baseline versions to the dictionary
+rename_dict.update({f'{key}_baseline': f'baseline_{value}' for key, value in rename_dict.items()})
+
+# rename the columns in the DataFrame
+dat.rename(columns=rename_dict, inplace=True)
+```
+
+
+#### Requirement 2 (10%)
+
+**Additive Index**
+
+An additive index is a composite measure created by summing the scores of individual indicators. It assumes equal contribution and a linear relationship between the indicators. This method is suitable when indicators are on the same scale and contribute equally to the concept being measured.
+
+- **Calculation:** Sum the scores of the indicators for each observation.
+- **When to use:** When indicators are on the same scale and contribute equally to the concept.
+- **When not to use:** When indicators are on different scales or contribute differently to the concept.
+- **Benefits:** Easy to calculate and interpret, transparent.
+
+**Averaged Z-Score**
+
+An averaged z-score is a composite measure created by standardizing individual indicators to z-scores (mean of zero and standard deviation of one) and then averaging these z-scores. This method is used to combine indicators on different scales or with different units of measurement.
+
+- **Calculation:** Standardize each indicator to z-scores and average these z-scores for each observation.
+- **When to use:** When indicators are on different scales or have different units of measurement.
+- **When not to use:** When all indicators are on the same scale and contribute equally to the concept.
+- **Benefits:** Allows for combining indicators on different scales, useful for comparison and interpretation.
+
+The choice between an additive index and an averaged z-score depends on the nature of the indicators being combined and the specific requirements of the analysis.
+
+```{python}
+
+# Convert boolean values to numeric and fill missing values with 0
+columns = ['baseline_plan_civil', 'baseline_plan_politics', 'baseline_plan_public', 'plan_civil', 'plan_politics', 'plan_public']
+
+dat[columns] = dat[columns].apply(lambda x: x.astype(float).fillna(0))
+
+# Recalculate the additive index with the converted columns
+dat['baseline_additive_index'] = dat[['baseline_plan_civil', 'baseline_plan_politics', 'baseline_plan_public']].sum(axis=1)
+dat['endline_additive_index'] = dat[['plan_civil', 'plan_politics', 'plan_public']].sum(axis=1)
+
+# Print the first few rows of the additive index columns
+print("Baseline Additive Index:")
+print(dat['baseline_additive_index'].head())
+
+print("\nEndline Additive Index:")
+print(dat['endline_additive_index'].head())
+
+# plot the distribution of the additive index
+sns.set(style="whitegrid")
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+sns.histplot(dat['baseline_additive_index'], kde=True, ax=axes[0])
+axes[0].set_title('Baseline Additive Index')
+sns.histplot(dat['endline_additive_index'], kde=True, ax=axes[1])
+axes[1].set_title('Endline Additive Index')
+plt.tight_layout()
+plt.show()
+
+print("Baseline Additive Index:")
+print(dat['baseline_additive_index'].head())
+
+print("\nEndline Additive Index:")
+print(dat['endline_additive_index'].head())
+
+```
