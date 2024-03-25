@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "PSCI 3200 - Assignment 1",
+    "section": "",
+    "text": "import pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Read in the data\ndat = pd.read_csv(\"https://raw.githubusercontent.com/jrspringman/psci3200-globaldev/main/workshops/aau_survey/clean_endline_did.csv\")\n\n# Clean the home region variable\ndat['q8_baseline'] = dat['q8_baseline'].replace({'Southern Nations, Nationalities, and Peoples Region': 'SNNPR'})\ndat['q8_baseline'] = dat['q8_baseline'].str.replace(' Region', '')\n\n# Create a color palette for plotting\npalette = sns.color_palette(\"husl\", len(dat['q8_baseline'].unique()))\n\n\nRequirement 1\nI have renamed the following variables\n\n\n\n\n\n\n\n\nOriginal Variable\nNew Variable Name\nDescription\n\n\n\n\nq26_civ\nplan_civil\nPlan to work in civil society\n\n\nq26_politics\nplan_politics\nPlan to work in politics\n\n\nq26_public\nplan_public\nPlan to work in public sector\n\n\nq27_1\nplan_run_office\nPlan to run for political office\n\n\nq27_3\nplan_start_ngo\nPlan to start a non-governmental organization\n\n\nq17_3\nbelief_change_participation\nYour participation can bring positive change\n\n\nq17_1\nbelief_youth_opportunities\nYouth are given opportunities to engage\n\n\nq17_2\nbelief_youth_change\nYouth participation can bring positive change"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site"
+  }
+]

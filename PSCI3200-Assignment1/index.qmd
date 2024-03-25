@@ -1,0 +1,49 @@
+---
+title: "PSCI 3200 - Assignment 1"
+author: "Insha Lakhani"
+
+institute: "University of Pennsylvania"
+date: last-modified
+toc: true
+
+format: 
+  html:
+    self-contained: true
+
+editor: source
+---
+
+```{python}
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Read in the data
+dat = pd.read_csv("https://raw.githubusercontent.com/jrspringman/psci3200-globaldev/main/workshops/aau_survey/clean_endline_did.csv")
+
+# Clean the home region variable
+dat['q8_baseline'] = dat['q8_baseline'].replace({'Southern Nations, Nationalities, and Peoples Region': 'SNNPR'})
+dat['q8_baseline'] = dat['q8_baseline'].str.replace(' Region', '')
+
+# Create a color palette for plotting
+palette = sns.color_palette("husl", len(dat['q8_baseline'].unique()))
+
+
+```
+
+
+#### Requirement 1
+I have renamed the following variables 
+
+| Original Variable | New Variable Name                 | Description                                    |
+|-------------------|-----------------------------------|------------------------------------------------|
+| q26_civ           | `plan_civil`                      | Plan to work in civil society                  |
+| q26_politics      | `plan_politics`                     | Plan to work in politics                       |
+| q26_public        | `plan_public`                       | Plan to work in public sector                  |
+| q27_1             | `plan_run_office`                   | Plan to run for political office               |
+| q27_3             | `plan_start_ngo`                    | Plan to start a non-governmental organization  |
+| q17_3             | `belief_change_participation`       | Your participation can bring positive change   |
+| q17_1             | `belief_youth_opportunities`        | Youth are given opportunities to engage        |
+| q17_2             | `belief_youth_change`               | Youth participation can bring positive change  |
+
+
