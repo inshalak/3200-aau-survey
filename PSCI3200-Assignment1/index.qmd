@@ -18,21 +18,17 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Read in the data
 dat = pd.read_csv("https://raw.githubusercontent.com/jrspringman/psci3200-globaldev/main/workshops/aau_survey/clean_endline_did.csv")
 
-# Clean the home region variable
 dat['q8_baseline'] = dat['q8_baseline'].replace({'Southern Nations, Nationalities, and Peoples Region': 'SNNPR'})
 dat['q8_baseline'] = dat['q8_baseline'].str.replace(' Region', '')
 
-# Create a color palette for plotting
 palette = sns.color_palette("husl", len(dat['q8_baseline'].unique()))
 
-print(dat.head())
 ```
 
 
-#### Requirement 1
+### Requirement 1
 I have renamed the following variables 
 
 | Original Variable | New Variable Name                 | Description                                    |
@@ -42,33 +38,37 @@ I have renamed the following variables
 | q26_public        | `plan_public`                       | Plan to work in public sector                  |
 | q27_1             | `plan_run_office`                   | Plan to run for political office               |
 | q27_3             | `plan_start_ngo`                    | Plan to start a non-governmental organization  |
-| q17_3             | `belief_change_participation`       | Your participation can bring positive change   |
-| q17_1             | `belief_youth_opportunities`        | Youth are given opportunities to engage        |
+| q17_3             | `belief_personal_positive_change`      | Your participation can bring positive change   |
+| q17_1             | `belief_have_opportunity`      | Youth are given opportunities to engage        |
 | q17_2             | `belief_youth_change`               | Youth participation can bring positive change  |
 
 
 ```{python}
-# defining a dictionary to map original column names to new descriptive names
 rename_dict = {
+    'q3_baseline' : 'gender',
     'q26_civ': 'plan_civil',
     'q26_politics': 'plan_politics',
     'q26_public': 'plan_public',
     'q27_1': 'plan_run_office',
     'q27_3': 'plan_start_ngo',
-    'q17_3': 'belief_change_participation',
-    'q17_1': 'belief_youth_opportunities',
+    'q17_3': 'belief_personal_positive_change',
+    'q17_1': 'belief_have_opportunity',
     'q17_2': 'belief_youth_change'
 }
 
-# adding baseline versions to the dictionary
 rename_dict.update({f'{key}_baseline': f'baseline_{value}' for key, value in rename_dict.items()})
 
-# rename the columns in the DataFrame
 dat.rename(columns=rename_dict, inplace=True)
+
+columns_to_print = ['plan_civil', 'plan_politics', 'plan_public', 'plan_run_office', 
+                    'plan_start_ngo', 'belief_personal_positive_change', 
+                    'belief_have_opportunity', 'belief_youth_change']
+
+
 ```
 
 
-#### Requirement 2 (10%)
+### Requirement 2 (10%)
 
 **Additive Index**
 
@@ -90,38 +90,154 @@ An averaged z-score is a composite measure created by standardizing individual i
 
 The choice between an additive index and an averaged z-score depends on the nature of the indicators being combined and the specific requirements of the analysis.
 
+
+### Requirement 3: Additive Index
 ```{python}
+dat['baseline_future_plans_index'] = dat[['baseline_plan_civil', 'baseline_plan_politics', 'baseline_plan_public', 'baseline_plan_run_office', 'baseline_plan_start_ngo']].sum(axis=1)
 
-# Convert boolean values to numeric and fill missing values with 0
-columns = ['baseline_plan_civil', 'baseline_plan_politics', 'baseline_plan_public', 'plan_civil', 'plan_politics', 'plan_public']
+dat['endline_future_plans_index'] = dat[['plan_civil', 'plan_politics', 'plan_public', 'plan_run_office', 'plan_start_ngo']].sum(axis=1)
 
-dat[columns] = dat[columns].apply(lambda x: x.astype(float).fillna(0))
-
-# Recalculate the additive index with the converted columns
-dat['baseline_additive_index'] = dat[['baseline_plan_civil', 'baseline_plan_politics', 'baseline_plan_public']].sum(axis=1)
-dat['endline_additive_index'] = dat[['plan_civil', 'plan_politics', 'plan_public']].sum(axis=1)
-
-# Print the first few rows of the additive index columns
-print("Baseline Additive Index:")
-print(dat['baseline_additive_index'].head())
-
-print("\nEndline Additive Index:")
-print(dat['endline_additive_index'].head())
-
-# plot the distribution of the additive index
-sns.set(style="whitegrid")
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-sns.histplot(dat['baseline_additive_index'], kde=True, ax=axes[0])
-axes[0].set_title('Baseline Additive Index')
-sns.histplot(dat['endline_additive_index'], kde=True, ax=axes[1])
-axes[1].set_title('Endline Additive Index')
-plt.tight_layout()
-plt.show()
-
-print("Baseline Additive Index:")
-print(dat['baseline_additive_index'].head())
-
-print("\nEndline Additive Index:")
-print(dat['endline_additive_index'].head())
+print(dat[['baseline_future_plans_index', 'endline_future_plans_index']].head())
 
 ```
+
+
+### Requirement 3: Z-Score Plotting
+```{python}
+from scipy.stats import zscore
+
+# list of variables for future plans and feelings of political efficacy
+future_plans_vars = ['plan_civil', 'plan_politics', 'plan_public', 'plan_run_office', 'plan_start_ngo']
+political_efficacy_vars = ['belief_personal_positive_change', 'belief_have_opportunity', 'belief_youth_change']
+
+# add baseline prefix to variables
+baseline_future_plans_vars = ['baseline_' + var for var in future_plans_vars]
+baseline_political_efficacy_vars = ['baseline_' + var for var in political_efficacy_vars]
+
+# calculate z-scores for each variable, handling NaN values by dropping them and checking for nonzero std deviation
+for var in future_plans_vars + political_efficacy_vars + baseline_future_plans_vars + baseline_political_efficacy_vars:
+    std_dev = dat[var].dropna().std()
+    if std_dev > 0:
+        dat[var + '_zscore'] = dat[var].dropna().transform(lambda x: (x - x.mean()) / std_dev)
+    else:
+        dat[var + '_zscore'] = 0  # Assign 0 if std deviation is zero
+dat['baseline_future_plans_avg_z'] = dat[[var + '_zscore' for var in baseline_future_plans_vars]].mean(axis=1)
+dat['endline_future_plans_avg_z'] = dat[[var + '_zscore' for var in future_plans_vars]].mean(axis=1)
+dat['baseline_political_efficacy_avg_z'] = dat[[var + '_zscore' for var in baseline_political_efficacy_vars]].mean(axis=1)
+dat['endline_political_efficacy_avg_z'] = dat[[var + '_zscore' for var in political_efficacy_vars]].mean(axis=1)
+
+
+print(dat[['baseline_future_plans_avg_z', 'endline_future_plans_avg_z', 'baseline_political_efficacy_avg_z', 'endline_political_efficacy_avg_z']].head())
+
+from plotnine import ggplot, aes, geom_histogram, labs, facet_wrap
+
+# convert the data for easier plotting
+long_dat = dat.melt(value_vars=['baseline_future_plans_avg_z', 'endline_future_plans_avg_z',
+                                'baseline_political_efficacy_avg_z', 'endline_political_efficacy_avg_z'],
+                    var_name='Variable', value_name='Z-Score')
+
+# Create the ggplot
+(ggplot(long_dat, aes(x='Z-Score')) +
+ geom_histogram(bins=30, fill='blue', alpha=0.7) +
+ facet_wrap('~ Variable', scales='free') +
+ labs(title='Distribution of Z-Scores', x='Z-Score', y='Count'))
+
+```
+
+
+### Requirement 5: 
+```{python}
+import pandas as pd
+import statsmodels.formula.api as smf
+# convert to numeric, coercing any non-numeric values to NaN
+dat['baseline_future_plans_avg_z'] = pd.to_numeric(dat['baseline_future_plans_avg_z'], errors='coerce')
+dat['baseline_political_efficacy_avg_z'] = pd.to_numeric(dat['baseline_political_efficacy_avg_z'], errors='coerce')
+
+# drop rows with NaN values in these columns
+dat = dat.dropna(subset=['baseline_future_plans_avg_z', 'baseline_political_efficacy_avg_z'])
+
+# subset 
+dat_subset = dat[['response_id', 'user_language',
+                  'baseline_future_plans_avg_z', 'endline_future_plans_avg_z',
+                  'baseline_political_efficacy_avg_z', 'endline_political_efficacy_avg_z']]
+
+# define
+results = smf.ols('baseline_future_plans_avg_z ~ baseline_political_efficacy_avg_z', data=dat_subset).fit()
+
+# Print the results
+print(results.summary())
+
+```
+
+#### Analysis
+
+Intercept (`α`): We see what we expect to see with the intercept. The co-efficient for the intercept is 0.0004 with a standard error of 0.017. This indicates that when the baseline_political_efficacy_avg_z is at the mean level (which is zero for z-scores), the expected value of the baseline_future_plans_avg_z is very close to zero and not significantly different from zero.
+
+Coefficient (β1): The coefficient for baseline_political_efficacy_avg_z is 0.0830 with a standard error of 0.024. The t-statistic is 3.414, and provides a p-value of 0.001, this shows that the coefficient is statistically significant!
+
+This means an increase in political efficacy is associated with an increase in future plans. Specifically, a one standard deviation increase in political efficacy is associated with an 0.083 standard deviation increase in future plans.
+
+While the effect is statistically significant, the practical significance (the amount of variance) is relatively small, which means that there are likely other factors at play that also affect future plans which are not included in the model.
+
+But to conclude, I think we can reasonably say that students who feel more efficacious politically are also more likely to have plans to engage in the public sector or civil society.
+
+To interpret the relationship between political efficacy and future plans as truly causal, we still assume in this case that all relevant factors are included in the model, the model accurately reflects the true relationship, the direction of influence is from political efficacy to future plans.
+
+
+### Requirement 6
+
+```{python}
+
+import statsmodels.formula.api as smf
+
+sample_mean_eff = dat['baseline_political_efficacy_avg_z'].mean()
+dat['efficacy_binary'] = (dat['baseline_political_efficacy_avg_z'] >= sample_mean_eff).astype(int)
+
+model = smf.ols('baseline_future_plans_avg_z ~ efficacy_binary * gender', data=dat).fit()
+
+table = model.summary()
+print(table)
+```
+
+From these results, we can infer that higher political efficacy is tentatively associated with more ambitious future plans among the respondents, regardless of gender. 
+
+Intercept: The negative intercept suggests that for this specific group, when political efficacy is below the mean, the z-score for future plans is expected to be lower than the overall mean of future plans.
+
+Political Efficacy (Binary): The positive coefficient here indicates that individuals with political efficacy at or above the mean have, on average, higher future plans z-scores compared to those below the mean. This has a p-value close to 0.05, so it shows us that it's a trend worth investigating!
+
+Interaction Term (Efficacy:Gender): The interaction term between political efficacy and gender is negative but not statistically significant. This implies that the increase in future plans associated with higher political efficacy does not differ substantially between genders, or at least not enough to be detected as statistically significant in this sample.
+
+### Requirement 7
+```{python}
+import pandas as pd
+import statsmodels.api as sm
+
+baseline_df = dat_subset[['response_id', 'user_language', 'baseline_future_plans_avg_z', 'baseline_political_efficacy_avg_z']].copy()
+endline_df = dat_subset[['response_id', 'user_language', 'endline_future_plans_avg_z', 'endline_political_efficacy_avg_z']].copy()
+
+baseline_df.columns = ['response_id', 'user_language', 'future_plans_avg_z', 'political_efficacy_avg_z']
+endline_df.columns = ['response_id', 'user_language', 'future_plans_avg_z', 'political_efficacy_avg_z']
+
+baseline_df['time'] = 'baseline'
+endline_df['time'] = 'endline'
+
+dat_long = pd.concat([baseline_df, endline_df], ignore_index=True)
+
+dat_long['future_plans_avg_z'] = pd.to_numeric(dat_long['future_plans_avg_z'], errors='coerce')
+dat_long['political_efficacy_avg_z'] = pd.to_numeric(dat_long['political_efficacy_avg_z'], errors='coerce')
+dat_long = dat_long.dropna(subset=['future_plans_avg_z', 'political_efficacy_avg_z'])
+
+fe_dummies = pd.get_dummies(dat_long['response_id'], drop_first=True)
+# Merge the dummy variables back into the main DataFrame
+dat_long = pd.concat([dat_long, fe_dummies], axis=1)
+independent_vars = ['political_efficacy_avg_z'] + list(fe_dummies.columns)
+formula = 'future_plans_avg_z ~ ' + ' + '.join(independent_vars)
+
+model = smf.ols(formula=formula, data=dat_long).fit()
+
+# Print the summary of the model
+print(model.summary())
+
+```
+
+β1 reflects how changes in political efficacy are associated with changes in future plans for the same individual, rather than comparing across different individuals.
